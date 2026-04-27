@@ -8,9 +8,10 @@ public class ApplicationEnhanced {
         
         System.out.println("=== Улучшенная версия с try-with-resources ===\n");
         
+        // Connection автоматически закроется
         try (Connection conn = DriverManager.getConnection(url)) {
             
-            // Создание таблицы
+            // Создание таблицы - Statement закроется автоматически
             String createTableSQL = """
                 CREATE TABLE IF NOT EXISTS users (
                     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -43,7 +44,7 @@ public class ApplicationEnhanced {
                 }
             }
             
-            // Выборка всех данных
+            // Выборка всех данных - закрываются и Statement, и ResultSet
             System.out.println("\n--- Список всех пользователей ---");
             String selectSQL = "SELECT * FROM users ORDER BY id";
             
@@ -71,8 +72,9 @@ public class ApplicationEnhanced {
             
             // Проверка после обновления
             System.out.println("\n--- Данные после обновления ---");
+            String checkSQL = "SELECT username, phone FROM users WHERE username = 'tommy'";
             try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT username, phone FROM users WHERE username = 'tommy'")) {
+                 ResultSet rs = stmt.executeQuery(checkSQL)) {
                 if (rs.next()) {
                     System.out.printf("Пользователь: %s, Новый телефон: %s%n", 
                         rs.getString("username"), rs.getString("phone"));
@@ -89,8 +91,9 @@ public class ApplicationEnhanced {
             
             // Финальная выборка
             System.out.println("\n--- Финальный список пользователей ---");
+            String finalSQL = "SELECT * FROM users ORDER BY id";
             try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM users ORDER BY id")) {
+                 ResultSet rs = stmt.executeQuery(finalSQL)) {
                 
                 while (rs.next()) {
                     System.out.printf("ID: %d | %s | %s%n",
@@ -106,6 +109,8 @@ public class ApplicationEnhanced {
             System.out.println("JDBC Driver: " + metaData.getDriverName());
             System.out.println("Database: " + metaData.getDatabaseProductName());
             System.out.println("Database Version: " + metaData.getDatabaseProductVersion());
+            
+            System.out.println("\n✓ Все ресурсы автоматически закрыты!");
             
         } catch (SQLException e) {
             System.err.println("Ошибка при работе с БД:");
