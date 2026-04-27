@@ -16,24 +16,16 @@ repositories {
 
 dependencies {
     implementation("com.h2database:h2:2.2.220")
+    
+    // Добавляем зависимости для тестирования
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
 }
 
-tasks.register("runEnhanced", JavaExec::class) {
-    mainClass = "io.hexlet.ApplicationEnhanced"
-    classpath = sourceSets.main.get().runtimeClasspath
-}
-
-tasks.register("runDemo", JavaExec::class) {
-    mainClass = "io.hexlet.TryWithResourcesDemo"
-    classpath = sourceSets.main.get().runtimeClasspath
-}
-
-tasks.register("runPrepared", JavaExec::class) {
-    mainClass = "io.hexlet.PreparedStatementDemo"
-    classpath = sourceSets.main.get().runtimeClasspath
-}
-
-tasks.register("runKeys", JavaExec::class) {
-    mainClass = "io.hexlet.GeneratedKeysDemo"
-    classpath = sourceSets.main.get().runtimeClasspath
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
 }

@@ -1,85 +1,92 @@
 package io.hexlet;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Application {
     public static void main(String[] args) throws SQLException {
-        String url = "jdbc:h2:mem:hexlet_test";
+        System.out.println("=== DAO Demo ===\n");
         
-        try (Connection conn = DriverManager.getConnection(url)) {
+        try (Connection conn = DriverManager.getConnection("jdbc:h2:mem:hexlet_test")) {
             
             // Создаем таблицу
-            String createTableSQL = """
-                CREATE TABLE IF NOT EXISTS users (
-                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                    username VARCHAR(255) NOT NULL UNIQUE,
-                    phone VARCHAR(255)
-                )
-                """;
+            createTable(conn);
             
-            try (Statement stmt = conn.createStatement()) {
-                stmt.execute(createTableSQL);
-                System.out.println("Таблица users создана");
-            }
+            // Создаем DAO
+            UserDAO userDAO = new UserDAO(conn);
             
-            // Добавляем несколько пользователей, используя один PreparedStatement
-            String insertSQL = "INSERT INTO users (username, phone) VALUES (?, ?)";
+            // 1. Создаем нового пользователя
+            System.out.println("1. Создание нового пользователя:");
+            User user1 = new User("Tommy", "123456789");
+            System.out.println("   До сохранения: " + user1);
+            userDAO.save(user1);
+            System.out.println("   После сохранения: " + user1);
             
-            try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
-                // Добавляем первого пользователя
-                pstmt.setString(1, "Tommy");
-                pstmt.setString(2, "123456789");
-                pstmt.executeUpdate();
-                
-                // Добавляем второго пользователя
-                pstmt.setString(1, "Maria");
-                pstmt.setString(2, "987654321");
-                pstmt.executeUpdate();
-                
-                // Добавляем третьего пользователя
-                pstmt.setString(1, "Sarah");
-                pstmt.setString(2, "555555555");
-                pstmt.executeUpdate();
-                
-                System.out.println("Добавлено 3 пользователя с помощью одного PreparedStatement");
-            }
+            // 2. Создаем еще одного пользователя
+            User user2 = new User("Alice", "987654321");
+            userDAO.save(user2);
+            System.out.println("   Создан: " + user2);
             
-            // Выводим всех пользователей
-            System.out.println("\nСписок всех пользователей:");
-            String selectSQL = "SELECT * FROM users ORDER BY id";
+            // 3. Поиск пользователя по ID
+            System.out.println("\n2. Поиск пользователя по ID:");
+            userDAO.find(user1.getId()).ifPresentOrElse(
+                u -> System.out.println("   Найден: " + u),
+                () -> System.out.println("   Пользователь не найден")
+            );
             
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(selectSQL)) {
-                
-                while (rs.next()) {
-                    System.out.printf("ID: %d, Username: %s, Phone: %s%n",
-                        rs.getLong("id"),
-                        rs.getString("username"),
-                        rs.getString("phone"));
-                }
-            }
+            // 4. Обновление пользователя
+            System.out.println("\n3. Обновление пользователя:");
+            user1.setPhone("111222333");
+            userDAO.save(user1);
+            System.out.println("   Обновлен: " + user1);
             
-            // Удаляем пользователя по имени с использованием PreparedStatement
-            String deleteSQL = "DELETE FROM users WHERE username = ?";
+            // 5. Поиск по имени
+            System.out.println("\n4. Поиск по имени:");
+            userDAO.findByUsername("Alice").ifPresentOrElse(
+                u -> System.out.println("   Найден: " + u),
+                () -> System.out.println("   Пользователь не найден")
+            );
             
-            try (PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
-                pstmt.setString(1, "Tommy");
-                int rowsDeleted = pstmt.executeUpdate();
-                System.out.printf("\nУдален пользователь Tommy (удалено строк: %d)%n", rowsDeleted);
-            }
+            // 6. Все пользователи
+            System.out.println("\n5. Все пользователи:");
+            userDAO.findAll().forEach(u -> System.out.println("   " + u));
             
-            // Выводим пользователей после удаления
-            System.out.println("\nСписок пользователей после удаления Tommy:");
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(selectSQL)) {
-                
-                while (rs.next()) {
-                    System.out.printf("ID: %d, Username: %s, Phone: %s%n",
-                        rs.getLong("id"),
-                        rs.getString("username"),
-                        rs.getString("phone"));
-                }
-            }
+            // 7. Удаление пользователя
+            System.out.println("\n6. Удаление пользователя:");
+            System.out.println("   Удален Tommy: " + userDAO.delete(user1));
+            
+            // 8. Пользователи после удаления
+            System.out.println("\n7. Пользователи после удаления:");
+            userDAO.findAll().forEach(u -> System.out.println("   " + u));
+            
+            // 9. Проверка существования
+            System.out.println("\n8. Проверка существования:");
+            System.out.println("   Существует ли Tommy? " + userDAO.exists(user1.getId()));
+            System.out.println("   Существует ли Alice? " + userDAO.exists(user2.getId()));
+            
+            // 10. Обновление телефона
+            System.out.println("\n9. Обновление телефона:");
+            userDAO.updatePhone(user2.getId(), "555555555");
+            userDAO.find(user2.getId()).ifPresent(u -> 
+                System.out.println("   Обновлен телефон: " + u)
+            );
+        }
+    }
+    
+    private static void createTable(Connection conn) throws SQLException {
+        String createTableSQL = """
+            CREATE TABLE IF NOT EXISTS users (
+                id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                username VARCHAR(255) NOT NULL UNIQUE,
+                phone VARCHAR(255)
+            )
+            """;
+        
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(createTableSQL);
+            System.out.println("✓ Таблица users создана\n");
         }
     }
 }
