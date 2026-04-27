@@ -27,3 +27,13 @@ tasks.register("runDemo", JavaExec::class) {
     mainClass = "io.hexlet.TryWithResourcesDemo"
     classpath = sourceSets.main.get().runtimeClasspath
 }
+
+tasks.register("runPrepared", JavaExec::class) {
+    mainClass = "io.hexlet.PreparedStatementDemo"
+    classpath = sourceSets.main.get().runtimeClasspath
+}
+
+tasks.register("runKeys", JavaExec::class) {
+    mainClass = "io.hexlet.GeneratedKeysDemo"
+    classpath = sourceSets.main.get().runtimeClasspath
+}
