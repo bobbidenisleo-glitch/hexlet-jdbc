@@ -22,3 +22,8 @@ tasks.register("runEnhanced", JavaExec::class) {
     mainClass = "io.hexlet.ApplicationEnhanced"
     classpath = sourceSets.main.get().runtimeClasspath
 }
+
+tasks.register("runDemo", JavaExec::class) {
+    mainClass = "io.hexlet.TryWithResourcesDemo"
+    classpath = sourceSets.main.get().runtimeClasspath
+}
